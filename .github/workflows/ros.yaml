@@ -18,7 +18,7 @@ jobs:
         run: docker build --build-arg ROS_DISTRO=$ROS_DISTRO -t ci-image -f docker/Dockerfile .
       - name: Build and test workspace
         run: |
-          docker run --user root -v $GITHUB_WORKSPACE:/ws -w /ws ci-image bash -c "
+          docker run --user root -e AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1 -v $GITHUB_WORKSPACE:/ws -w /ws ci-image bash -c "
           vcs import --skip-existing < src/ros2.repos src \
           && apt-get update \
           && rosdep update --rosdistro=$ROS_DISTRO \
@@ -39,7 +39,7 @@ jobs:
       - name: Run linter
         run: |
           docker build --build-arg ROS_DISTRO=$ROS_DISTRO -t ci-image -f docker/Dockerfile .
-          docker run --user root -v $GITHUB_WORKSPACE:/ws -w /ws ci-image bash -c "
+          docker run --user root -e AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1 -v $GITHUB_WORKSPACE:/ws -w /ws ci-image bash -c "
           vcs import --skip-existing < src/ros2.repos src \
           && ament_${{ matrix.linter }} src/
           "

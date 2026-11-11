@@ -1,6 +1,6 @@
 """Publish a constant Twist on /cmd_vel and log Isaac Sim's /clock."""
-import rclpy
 from geometry_msgs.msg import Twist
+import rclpy
 from rclpy.node import Node
 from rosgraph_msgs.msg import Clock
 
