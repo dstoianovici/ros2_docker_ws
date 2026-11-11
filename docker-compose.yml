@@ -1,0 +1,72 @@
+# Each service belongs to a profile toggled by a BUILD_<PROFILE>=true flag in .env.
+# Use `make <target>` or ./scripts/compose.sh rather than plain `docker compose`
+# so the flags are applied.
+#
+# Both services use host networking + host IPC so DDS discovery works between
+# Isaac Sim, ROS 2 nodes, and the host.
+x-common: &common
+  network_mode: host
+  ipc: host
+  environment: &common-env
+    ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}
+    RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION}
+    DISPLAY: ${DISPLAY:-:0}
+    QT_X11_NO_MITSHM: "1"
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: all
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+services:
+  ros2:
+    <<: *common
+    profiles: ["ros2"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: ${ROS_DISTRO}
+        USER_UID: ${USER_UID}
+        USER_GID: ${USER_GID}
+    image: ros2_docker_ws:${ROS_DISTRO}
+    container_name: ros2_dev
+    stdin_open: true
+    tty: true
+    environment:
+      <<: *common-env
+      FASTRTPS_DEFAULT_PROFILES_FILE: /ws/config/fastdds.xml
+    volumes:
+      - .:/ws
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+
+  isaac-sim:
+    <<: *common
+    profiles: ["isaac_sim"]
+    image: ${ISAAC_SIM_IMAGE}
+    container_name: isaac_sim
+    entrypoint: bash
+    command: ["-c", "./runapp.sh"]
+    stdin_open: true
+    tty: true
+    environment:
+      <<: *common-env
+      FASTRTPS_DEFAULT_PROFILES_FILE: /config/fastdds.xml
+      ACCEPT_EULA: "Y"
+      PRIVACY_CONSENT: "Y"
+      ROS_DISTRO: ${ROS_DISTRO}
+      LD_LIBRARY_PATH: /isaac-sim/exts/isaacsim.ros2.bridge/${ROS_DISTRO}/lib
+    volumes:
+      - ${ISAAC_SIM_CACHE}/cache/main:/isaac-sim/.cache:rw
+      - ${ISAAC_SIM_CACHE}/cache/computecache:/isaac-sim/.nv/ComputeCache:rw
+      - ${ISAAC_SIM_CACHE}/logs:/isaac-sim/.nvidia-omniverse/logs:rw
+      - ${ISAAC_SIM_CACHE}/config:/isaac-sim/.nvidia-omniverse/config:rw
+      - ${ISAAC_SIM_CACHE}/data:/isaac-sim/.local/share/ov/data:rw
+      - ${ISAAC_SIM_CACHE}/pkg:/isaac-sim/.local/share/ov/pkg:rw
+      - ${ISAAC_SIM_CACHE}/documents:/isaac-sim/Documents:rw
+      - ./config:/config:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw

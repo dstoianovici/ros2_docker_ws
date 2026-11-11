@@ -1,40 +1,55 @@
-// See https://aka.ms/vscode-remote/devcontainer.json for format details.
+// See https://containers.dev/implementors/json_reference/ for format details.
+// Uses the same image as the `ros2` compose service (docker/Dockerfile).
 {
-	"dockerFile": "Dockerfile",
+	"name": "ros2_docker_ws",
 	"build": {
+		"dockerfile": "../docker/Dockerfile",
+		"context": "..",
 		"args": {
-			"WORKSPACE": "${containerWorkspaceFolder}"
+			"ROS_DISTRO": "jazzy",
+			"USER_UID": "${localEnv:UID:1000}",
+			"USER_GID": "1000"
 		}
 	},
 	"remoteUser": "ros",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/ws,type=bind",
+	"workspaceFolder": "/ws",
 	"runArgs": [
 		"--network=host",
+		"--ipc=host",
+		"--gpus=all",
 		"--cap-add=SYS_PTRACE",
-		"--security-opt=seccomp:unconfined",
-		"--security-opt=apparmor:unconfined",
+		"--security-opt=seccomp=unconfined",
+		"--security-opt=apparmor=unconfined",
 		"--volume=/tmp/.X11-unix:/tmp/.X11-unix"
 	],
-	"containerEnv": { "DISPLAY": "${localEnv:DISPLAY}" },
-	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		"terminal.integrated.profiles.linux": {
-			"bash": {
-				"path": "bash"
-			},
-		},
-		"terminal.integrated.defaultProfile.linux": "bash"
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}",
+		"ROS_DOMAIN_ID": "0",
+		"RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
+		"FASTRTPS_DEFAULT_PROFILES_FILE": "/ws/config/fastdds.xml"
 	},
-	"extensions": [
-		"dotjoshjohnson.xml",
-		"zachflower.uncrustify",
-		"ms-azuretools.vscode-docker",
-		"ms-iot.vscode-ros",
-		"ms-python.python",
-		"ms-vscode.cpptools",
-		"redhat.vscode-yaml",
-		"smilerobotics.urdf",
-		"streetsidesoftware.code-spell-checker",
-		"twxs.cmake",
-		"yzhang.markdown-all-in-one"
-	]
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.profiles.linux": {
+					"bash": { "path": "bash" }
+				},
+				"terminal.integrated.defaultProfile.linux": "bash"
+			},
+			"extensions": [
+				"dotjoshjohnson.xml",
+				"zachflower.uncrustify",
+				"ms-azuretools.vscode-docker",
+				"ranch-hand-robotics.rde-pack",
+				"ms-python.python",
+				"ms-vscode.cpptools",
+				"redhat.vscode-yaml",
+				"smilerobotics.urdf",
+				"streetsidesoftware.code-spell-checker",
+				"twxs.cmake",
+				"yzhang.markdown-all-in-one"
+			]
+		}
+	}
 }
